@@ -43,6 +43,10 @@ Window {
     color: "transparent"
     flags: Qt.WindowDoesNotAcceptFocus
 
+    property int showPosition: (Panel.position == Dock.Top || Panel.position == Dock.Left) ? 0 : (Panel.position == Dock.Bottom ? Screen.height - dockSize : Screen.width - dockSize)
+    property int hidePosition: (Panel.position == Dock.Top || Panel.position == Dock.Left) ? showPosition - dockSize : showPosition + dockSize
+
+
     function blendColorAlpha(fallback) {
         var appearance = DS.applet("org.deepin.ds.dde-appearance")
         if (!appearance || appearance.opacity < 0)
@@ -84,6 +88,10 @@ Window {
         anchors.fill: parent
         cornerRadius: 0
         blendColor: {
+            // TODO: when dtk support treeland blur, remove following
+            if (Qt.platform.pluginName === "wayland")
+                return "transparent"
+
             if (valid) {
                 return DStyle.Style.control.selectColor(undefined,
                                                     Qt.rgba(235 / 255.0, 235 / 255.0, 235 / 255.0, dock.blendColorAlpha(0.6)),
@@ -98,14 +106,14 @@ Window {
     PropertyAnimation {
         id: hideShowAnimation;
         target: dock;
-        property: useColumnLayout ? "width" : "height";
-        to: Panel.hideState != Dock.Hide ? Panel.dockSize : 1;
+        property: useColumnLayout ? "x" : "y";
+        to: Panel.hideState != Dock.Hide ?  showPosition : hidePosition;
         duration: 500
         onStarted: {
             dock.visible = true
         }
         onStopped: {
-            dock.visible = ((useColumnLayout ? dock.width : dock.height) != 1)
+            dock.visible = (useColumnLayout ? dock.width : dock.height != 0)
         }
     }
 
